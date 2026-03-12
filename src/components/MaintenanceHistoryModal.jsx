@@ -118,6 +118,7 @@ export default function MaintenanceHistoryModal({ isOpen, onClose, onSuccess, ed
                                 required
                                 value={formData.changeDate}
                                 onChange={(e) => setFormData({ ...formData, changeDate: e.target.value })}
+                                max={new Date().toISOString().split('.')[0].slice(0, 16)}
                             />
                         </div>
 
