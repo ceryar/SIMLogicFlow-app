@@ -75,19 +75,25 @@ function TimePicker({ value, onChange, label, required }) {
 
 // ---- Main modal ----
 export default function ProCourseModal({ isOpen, onClose, onSuccess, editProCourse }) {
-    const [formData, setFormData] = useState({
+    const [courseId, setCourseId] = useState('');
+    const [sessions, setSessions] = useState([]); // Array of { id, fecha, horaini, horafin, horas }
+
+    // For the "current" row being edited in the form before adding to list
+    const [currentSession, setCurrentSession] = useState({
+        fecha: '',
         horaini: '',
         horafin: '',
-        horas: '',
-        fecha: '',
-        courseId: ''
+        horas: ''
     });
+
     const [courses, setCourses] = useState([]);
     const [allProCourses, setAllProCourses] = useState([]);
     const [loading, setLoading] = useState(false);
     const [fetchingCourses, setFetchingCourses] = useState(false);
     const [error, setError] = useState(null);
     const [warnings, setWarnings] = useState([]);
+
+    const today = new Date().toISOString().split('T')[0];
 
     useEffect(() => {
         const fetchData = async () => {
@@ -113,15 +119,18 @@ export default function ProCourseModal({ isOpen, onClose, onSuccess, editProCour
 
     useEffect(() => {
         if (editProCourse) {
-            setFormData({
+            setCourseId(editProCourse.course ? String(editProCourse.course.id) : '');
+            setSessions([{
+                id: editProCourse.id,
+                fecha: editProCourse.fecha || '',
                 horaini: editProCourse.horaini || '',
                 horafin: editProCourse.horafin || '',
-                horas: editProCourse.horas || '',
-                fecha: editProCourse.fecha || '',
-                courseId: editProCourse.course ? String(editProCourse.course.id) : ''
-            });
+                horas: editProCourse.horas || ''
+            }]);
         } else {
-            setFormData({ horaini: '', horafin: '', horas: '', fecha: '', courseId: '' });
+            setCourseId('');
+            setSessions([]);
+            setCurrentSession({ fecha: '', horaini: '', horafin: '', horas: '' });
         }
         setError(null);
         setWarnings([]);
@@ -129,113 +138,100 @@ export default function ProCourseModal({ isOpen, onClose, onSuccess, editProCour
 
     // ---- Derived values ----
     const selectedCourse = useMemo(
-        () => courses.find(c => String(c.id) === String(formData.courseId)),
-        [courses, formData.courseId]
+        () => courses.find(c => String(c.id) === String(courseId)),
+        [courses, courseId]
     );
 
-    // Auto-calculate session hours from horaini/horafin
     const calcSessionHours = (ini, fin) => {
         if (!ini || !fin) return '';
         const [hI, mI] = ini.split(':').map(Number);
         const [hF, mF] = fin.split(':').map(Number);
         const totalMin = (hF * 60 + mF) - (hI * 60 + mI);
         if (totalMin <= 0) return '';
-        return Math.round(totalMin / 60 * 10) / 10; // 1 decimal
+        return Math.round(totalMin / 60 * 10) / 10;
     };
 
-    // Total hours already scheduled for selected course (excluding current edit)
     const scheduledHours = useMemo(() => {
-        if (!formData.courseId) return 0;
+        if (!courseId) return 0;
         return allProCourses
-            .filter(pc => String(pc.course?.id) === String(formData.courseId) && (!editProCourse || pc.id !== editProCourse.id))
+            .filter(pc => String(pc.course?.id) === String(courseId) && (!editProCourse || pc.id !== editProCourse.id))
             .reduce((sum, pc) => sum + (Number(pc.horas) || 0), 0);
-    }, [allProCourses, formData.courseId, editProCourse]);
+    }, [allProCourses, courseId, editProCourse]);
 
-    // Update horas when times change
-    const handleTimeChange = (field, val) => {
-        const next = { ...formData, [field]: val };
+    const totalNewSessionsHours = useMemo(() => {
+        return sessions.reduce((sum, s) => sum + (Number(s.horas) || 0), 0);
+    }, [sessions]);
+
+    const handleCurrentTimeChange = (field, val) => {
+        const next = { ...currentSession, [field]: val };
         const calc = calcSessionHours(
-            field === 'horaini' ? val : formData.horaini,
-            field === 'horafin' ? val : formData.horafin
+            field === 'horaini' ? val : currentSession.horaini,
+            field === 'horafin' ? val : currentSession.horafin
         );
-        if (calc !== '') next.horas = calc;
-        setFormData(next);
+        next.horas = calc || '';
+        setCurrentSession(next);
     };
 
-    // Validate before submit
-    const validate = () => {
-        const warns = [];
-        const errs = [];
+    const addSessionToList = () => {
+        if (!currentSession.fecha || !currentSession.horaini || !currentSession.horafin || !currentSession.horas) {
+            setError('Complete todos los campos de la sesión antes de añadirla.');
+            return;
+        }
 
-        // 1) horafin must be after horaini
-        if (formData.horaini && formData.horafin) {
-            const [hI, mI] = formData.horaini.split(':').map(Number);
-            const [hF, mF] = formData.horafin.split(':').map(Number);
-            if ((hF * 60 + mF) <= (hI * 60 + mI)) {
-                errs.push('La hora de fin debe ser posterior a la hora de inicio.');
+        // Validate individual session against course bounds
+        if (selectedCourse) {
+            if (currentSession.fecha < selectedCourse.fecInicio || currentSession.fecha > selectedCourse.fecFin) {
+                setError(`La fecha debe estar entre ${selectedCourse.fecInicio} y ${selectedCourse.fecFin}`);
+                return;
+            }
+            if (currentSession.fecha < today) {
+                setError('No se pueden programar sesiones en fechas pasadas.');
+                return;
             }
         }
 
-        // 2) fecha cannot be after course fecFin
-        if (selectedCourse && formData.fecha) {
-            if (formData.fecha > selectedCourse.fecFin) {
-                errs.push(`La fecha de sesión (${formData.fecha}) supera la fecha fin del curso (${selectedCourse.fecFin}).`);
-            }
-            if (formData.fecha < selectedCourse.fecInicio) {
-                errs.push(`La fecha de sesión es anterior al inicio del curso (${selectedCourse.fecInicio}).`);
-            }
+        const newTotal = scheduledHours + totalNewSessionsHours + Number(currentSession.horas);
+        if (selectedCourse && newTotal > selectedCourse.horas) {
+            setError(`Esta sesión superaría el límite de horas del curso (${selectedCourse.horas}h).`);
+            return;
         }
 
-        // 3) Total scheduled hours must not exceed course hours
-        if (selectedCourse?.horas && formData.horas) {
-            const newTotal = scheduledHours + Number(formData.horas);
-            if (newTotal > selectedCourse.horas) {
-                errs.push(
-                    `Esta sesión superaría el total de horas del curso. ` +
-                    `Programadas: ${scheduledHours}h, Esta sesión: ${formData.horas}h, ` +
-                    `Total: ${newTotal}h > Límite: ${selectedCourse.horas}h.`
-                );
-            } else if (newTotal === selectedCourse.horas) {
-                warns.push(`Con esta sesión se completarán exactamente las ${selectedCourse.horas}h del curso.`);
-            } else {
-                const remaining = selectedCourse.horas - newTotal;
-                warns.push(`Después de esta sesión quedarán ${remaining}h por programar.`);
-            }
-        }
+        setSessions([...sessions, { ...currentSession, id: Date.now() }]);
+        setCurrentSession({ fecha: '', horaini: '', horafin: '', horas: '' });
+        setError(null);
+    };
 
-        return { errs, warns };
+    const removeSession = (id) => {
+        setSessions(sessions.filter(s => s.id !== id));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(null);
-        setWarnings([]);
-
-        const { errs, warns } = validate();
-        if (errs.length > 0) {
-            setError(errs.join(' '));
+        if (sessions.length === 0) {
+            setError('Debe añadir al menos una sesión a la lista.');
             return;
         }
-        setWarnings(warns);
 
         setLoading(true);
+        setError(null);
+
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            const payload = {
-                ...formData,
-                horas: Number(formData.horas),
-                courseId: Number(formData.courseId)
-            };
 
-            let response;
             if (editProCourse) {
-                response = await axios.put(`/api/v1/pro-courses/${editProCourse.id}`, payload, config);
+                const s = sessions[0];
+                const payload = { ...s, horas: Number(s.horas), courseId: Number(courseId) };
+                const res = await axios.put(`/api/v1/pro-courses/${editProCourse.id}`, payload, config);
+                onSuccess(res.data, true);
             } else {
-                response = await axios.post('/api/v1/pro-courses', payload, config);
+                const promises = sessions.map(s => {
+                    const payload = { ...s, horas: Number(s.horas), courseId: Number(courseId) };
+                    return axios.post('/api/v1/pro-courses', payload, config);
+                });
+                const responses = await Promise.all(promises);
+                onSuccess(responses[0].data, false);
             }
-
-            onSuccess(response.data, !!editProCourse);
             onClose();
         } catch (err) {
             setError(err.response?.data?.message || 'Error al guardar la programación.');
@@ -246,39 +242,34 @@ export default function ProCourseModal({ isOpen, onClose, onSuccess, editProCour
 
     if (!isOpen) return null;
 
-    const sessionHoursPreview = calcSessionHours(formData.horaini, formData.horafin);
-    const totalAfter = scheduledHours + Number(formData.horas || 0);
+    const totalAfter = scheduledHours + totalNewSessionsHours;
     const courseLimit = selectedCourse?.horas || 0;
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '580px' }}>
+            <div className="modal-content" style={{ maxWidth: '650px' }}>
                 <div className="modal-header">
-                    <h3>{editProCourse ? 'Editar Programación' : 'Nueva Programación de Sesión'}</h3>
+                    <h3>{editProCourse ? 'Editar Sesión' : 'Programar Multi-sesiones'}</h3>
                     <button className="btn-close" onClick={onClose}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
 
                 {error && <div className="modal-error">{error}</div>}
-                {warnings.map((w, i) => (
-                    <div key={i} className="modal-warning">{w}</div>
-                ))}
 
                 <form className="modal-form" onSubmit={handleSubmit}>
                     <div className="form-grid">
-
-                        {/* Curso */}
                         <div className="form-group full-width">
-                            <label>Seleccionar Curso *</label>
+                            <label>Curso *</label>
                             <select
                                 required
-                                value={formData.courseId}
-                                onChange={(e) => setFormData({ ...formData, courseId: e.target.value, fecha: '', horaini: '', horafin: '', horas: '' })}
-                                disabled={fetchingCourses}
+                                value={courseId}
+                                onChange={(e) => {
+                                    setCourseId(e.target.value);
+                                    setSessions([]);
+                                    setError(null);
+                                }}
+                                disabled={fetchingCourses || editProCourse}
                             >
                                 <option value="">Seleccione un curso...</option>
                                 {courses.map(course => (
@@ -289,99 +280,134 @@ export default function ProCourseModal({ isOpen, onClose, onSuccess, editProCour
                             </select>
                         </div>
 
-                        {/* Course Hours Summary */}
                         {selectedCourse && (
                             <div className="form-group full-width">
                                 <div className="hours-progress-bar">
                                     <div className="hours-progress-labels">
-                                        <span>Horas programadas</span>
+                                        <span>Horas Totales (DB + Nuevas)</span>
                                         <span className={totalAfter > courseLimit ? 'over-limit' : ''}>
-                                            {scheduledHours + Number(formData.horas || 0)}h / {courseLimit}h
+                                            {totalAfter}h / {courseLimit}h
                                         </span>
                                     </div>
                                     <div className="hours-track">
                                         <div
-                                            className={`hours-fill ${totalAfter > courseLimit ? 'over' : totalAfter === courseLimit ? 'complete' : ''}`}
+                                            className={`hours-fill ${totalAfter >= courseLimit ? 'complete' : ''}`}
                                             style={{ width: `${Math.min((totalAfter / courseLimit) * 100, 100)}%` }}
                                         />
                                     </div>
                                     <div className="hours-meta">
-                                        Ya programadas: <strong>{scheduledHours}h</strong>
-                                        &ensp;·&ensp;
-                                        Disponibles: <strong>{Math.max(courseLimit - scheduledHours, 0)}h</strong>
-                                        &ensp;·&ensp;
-                                        Vigencia: <strong>{selectedCourse.fecInicio} — {selectedCourse.fecFin}</strong>
+                                        En DB: <strong>{scheduledHours}h</strong> |
+                                        En Lista: <strong>{totalNewSessionsHours}h</strong> |
+                                        Disponible: <strong>{Math.max(courseLimit - totalAfter, 0)}h</strong>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Fecha */}
-                        <div className="form-group full-width">
-                            <label>Fecha de Sesión *</label>
-                            <DatePicker
-                                required
-                                value={formData.fecha}
-                                onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                                placeholder="Seleccionar fecha"
-                                minDate={selectedCourse?.fecInicio}
-                                maxDate={selectedCourse?.fecFin}
-                            />
-                            {selectedCourse && (
-                                <small className="field-hint">
-                                    Solo entre {selectedCourse.fecInicio} y {selectedCourse.fecFin}
-                                </small>
-                            )}
-                        </div>
-
-                        {/* Hora Inicio */}
-                        <div className="form-group">
-                            <label>Hora Inicio *</label>
-                            <TimePicker
-                                value={formData.horaini}
-                                onChange={(e) => handleTimeChange('horaini', e.target.value)}
-                                required
-                            />
-                        </div>
-
-                        {/* Hora Fin */}
-                        <div className="form-group">
-                            <label>Hora Fin *</label>
-                            <TimePicker
-                                value={formData.horafin}
-                                onChange={(e) => handleTimeChange('horafin', e.target.value)}
-                                required
-                            />
-                        </div>
-
-                        {/* Horas de sesión (auto-calculated) */}
-                        <div className="form-group full-width">
-                            <label>Horas de Sesión (calculadas automáticamente)</label>
-                            <div className="hours-display-row">
-                                <div className={`hours-chip ${!sessionHoursPreview ? 'empty' : ''}`}>
-                                    {sessionHoursPreview
-                                        ? `${sessionHoursPreview} hora${sessionHoursPreview !== 1 ? 's' : ''}`
-                                        : 'Selecciona hora inicio y fin'}
+                        {!editProCourse && selectedCourse && (
+                            <div className="session-builder full-width" style={{ background: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)', marginBottom: '15px' }}>
+                                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: '#94a3b8' }}>Añadir sesión a la lista</h4>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '10px', alignItems: 'end' }}>
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label style={{ fontSize: '12px' }}>Fecha</label>
+                                        <DatePicker
+                                            value={currentSession.fecha}
+                                            onChange={(e) => setCurrentSession({ ...currentSession, fecha: e.target.value })}
+                                            minDate={selectedCourse.fecInicio < today ? today : selectedCourse.fecInicio}
+                                            maxDate={selectedCourse.fecFin}
+                                        />
+                                    </div>
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label style={{ fontSize: '12px' }}>Inicio</label>
+                                        <TimePicker
+                                            value={currentSession.horaini}
+                                            onChange={(e) => handleCurrentTimeChange('horaini', e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label style={{ fontSize: '12px' }}>Fin</label>
+                                        <TimePicker
+                                            value={currentSession.horafin}
+                                            onChange={(e) => handleCurrentTimeChange('horafin', e.target.value)}
+                                        />
+                                    </div>
+                                    <button type="button" className="btn-primary" onClick={addSessionToList} style={{ padding: '10px', height: '42px' }}>
+                                        +
+                                    </button>
                                 </div>
-                                {sessionHoursPreview && selectedCourse && (
-                                    <span className={`hours-status ${totalAfter > courseLimit ? 'status-error' : 'status-ok'}`}>
-                                        {totalAfter > courseLimit
-                                            ? `⚠ Supera el límite del curso (${courseLimit}h)`
-                                            : `✓ Dentro del límite (${courseLimit}h)`}
-                                    </span>
+                                {currentSession.horas && (
+                                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#6366f1' }}>
+                                        Duración: {currentSession.horas} h
+                                    </div>
                                 )}
                             </div>
-                            {/* Hidden input keeps the value required */}
-                            <input type="hidden" value={formData.horas} required />
-                        </div>
+                        )}
+
+                        {sessions.length > 0 && (
+                            <div className="sessions-list full-width" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                                <label style={{ marginBottom: '8px', display: 'block' }}>Sesiones para guardar ({sessions.length}):</label>
+                                {sessions.map((s, idx) => (
+                                    <div key={s.id} className="session-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '6px' }}>
+                                        <div style={{ fontSize: '14px' }}>
+                                            <strong>{s.fecha}</strong> | {s.horaini} - {s.horafin} ({s.horas}h)
+                                        </div>
+                                        {!editProCourse && (
+                                            <button type="button" className="btn-icon btn-delete" onClick={() => removeSession(s.id)} style={{ color: '#ef4444' }}>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {editProCourse && sessions[0] && (
+                            <>
+                                <div className="form-group">
+                                    <label>Fecha de Sesión *</label>
+                                    <DatePicker
+                                        required
+                                        value={sessions[0].fecha}
+                                        onChange={(e) => setSessions([{ ...sessions[0], fecha: e.target.value }])}
+                                        minDate={selectedCourse?.fecInicio < today ? today : selectedCourse?.fecInicio}
+                                        maxDate={selectedCourse?.fecFin}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Hora Inicio *</label>
+                                    <TimePicker
+                                        value={sessions[0].horaini}
+                                        onChange={(e) => {
+                                            const h = calcSessionHours(e.target.value, sessions[0].horafin);
+                                            setSessions([{ ...sessions[0], horaini: e.target.value, horas: h || '' }]);
+                                        }}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Hora Fin *</label>
+                                    <TimePicker
+                                        value={sessions[0].horafin}
+                                        onChange={(e) => {
+                                            const h = calcSessionHours(sessions[0].horaini, e.target.value);
+                                            setSessions([{ ...sessions[0], horafin: e.target.value, horas: h || '' }]);
+                                        }}
+                                    />
+                                </div>
+                                <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                                    <div className="hours-chip" style={{ height: '42px', display: 'flex', alignItems: 'center', width: '100%' }}>
+                                        {sessions[0].horas}h
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
 
-                    <div className="modal-actions">
-                        <button type="button" className="btn-secondary" onClick={onClose} disabled={loading || fetchingCourses}>
+                    <div className="modal-actions" style={{ marginTop: '20px' }}>
+                        <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
                             Cancelar
                         </button>
-                        <button type="submit" className="btn-primary" disabled={loading || fetchingCourses || !formData.horas}>
-                            {loading ? 'Guardando...' : (editProCourse ? 'Actualizar Programación' : 'Crear Sesión')}
+                        <button type="submit" className="btn-primary" disabled={loading || sessions.length === 0}>
+                            {loading ? 'Guardando...' : (editProCourse ? 'Actualizar Sesión' : `Guardar ${sessions.length} Sesiones`)}
                         </button>
                     </div>
                 </form>
@@ -389,3 +415,4 @@ export default function ProCourseModal({ isOpen, onClose, onSuccess, editProCour
         </div>
     );
 }
+

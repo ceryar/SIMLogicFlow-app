@@ -538,3 +538,127 @@ input:checked+.slider:before {
     font-size: 0.7rem;
     color: #64748b;
 }
+
+/* Hours Progress and Sessions List Styles */
+.hours-progress-bar {
+    margin-top: 5px;
+    padding: 12px;
+    background: rgba(100, 116, 139, 0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(100, 116, 139, 0.1);
+}
+
+.hours-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.hours-track {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.hours-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #a855f7);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.hours-fill.complete {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.hours-fill.over {
+    background: #ef4444;
+}
+
+.over-limit {
+    color: #ef4444;
+}
+
+.hours-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.hours-meta strong {
+    color: #475569;
+}
+
+@media (prefers-color-scheme: dark) {
+    .hours-progress-bar {
+        background: rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .hours-track {
+        background: #334155;
+    }
+
+    .hours-meta strong {
+        color: #cbd5e1;
+    }
+}
+
+.hours-display-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hours-chip {
+    padding: 8px 16px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.95rem;
+    border: 1px solid #e2e8f0;
+}
+
+.hours-chip.empty {
+    color: #94a3b8;
+    font-weight: 400;
+    border-style: dashed;
+}
+
+@media (prefers-color-scheme: dark) {
+    .hours-chip {
+        background: #0f172a;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+}
+
+.hours-status {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-ok {
+    color: #10b981;
+}
+
+.status-error {
+    color: #ef4444;
+}
+
+.session-builder {
+    transition: all 0.2s;
+}
+
+.session-item {
+    transition: transform 0.2s;
+}
+
+.session-item:hover {
+    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.08) !important;
+}
