@@ -144,6 +144,7 @@ export default function CourseModal({ isOpen, onClose, onSuccess, editCourse }) 
                                 value={formData.fecInicio}
                                 onChange={(e) => setFormData({ ...formData, fecInicio: e.target.value })}
                                 placeholder="Seleccionar inicio"
+                                minDate={new Date().toISOString().split('T')[0]}
                             />
                         </div>
                         <div className="form-group">
@@ -153,6 +154,7 @@ export default function CourseModal({ isOpen, onClose, onSuccess, editCourse }) 
                                 value={formData.fecFin}
                                 onChange={(e) => setFormData({ ...formData, fecFin: e.target.value })}
                                 placeholder="Seleccionar fin"
+                                minDate={formData.fecInicio || new Date().toISOString().split('T')[0]}
                             />
                         </div>
 
