@@ -1,0 +1,492 @@
+/* =====================================================
+   USER COURSES MENU - Split Panel Layout
+   ===================================================== */
+
+.uc-layout {
+    display: flex;
+    gap: 20px;
+    height: calc(100vh - 140px);
+    overflow: hidden;
+}
+
+/* ---- Left Panel: User List ---- */
+.uc-user-panel {
+    width: 340px;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    background: var(--card-bg, #1e293b);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.uc-panel-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.uc-panel-header h3 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 10px 0;
+}
+
+.uc-search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+.uc-search-box svg {
+    color: var(--text-secondary, #94a3b8);
+    flex-shrink: 0;
+}
+
+.uc-search-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary, #f1f5f9);
+    font-size: 0.875rem;
+    width: 100%;
+}
+
+.uc-search-box input::placeholder {
+    color: var(--text-secondary, #64748b);
+}
+
+.uc-user-list {
+    list-style: none;
+    margin: 0;
+    padding: 8px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.uc-user-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.uc-user-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.uc-user-item.active {
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+.uc-user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+}
+
+.uc-user-avatar.large {
+    width: 48px;
+    height: 48px;
+    font-size: 1rem;
+}
+
+.uc-user-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.uc-user-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary, #f1f5f9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.uc-user-email {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #64748b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.uc-role-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.uc-role-badge.role-administrador {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.uc-role-badge.role-tecnico {
+    background: rgba(249, 115, 22, 0.15);
+    color: #fb923c;
+    border-color: rgba(249, 115, 22, 0.3);
+}
+
+.uc-role-badge.role-instructor {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.uc-role-badge.role-estudiante {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.uc-role-badge.role-cooracad {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border-color: rgba(168, 85, 247, 0.3);
+}
+
+.uc-role-badge.role-pseudopiloto {
+    background: rgba(6, 182, 212, 0.15);
+    color: #22d3ee;
+    border-color: rgba(6, 182, 212, 0.3);
+}
+
+.uc-empty-list {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-secondary, #64748b);
+    font-size: 0.875rem;
+}
+
+/* ---- Right Panel: Course Management ---- */
+.uc-course-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--card-bg, #1e293b);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.uc-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    color: var(--text-secondary, #64748b);
+    padding: 40px;
+    text-align: center;
+}
+
+.uc-placeholder svg {
+    opacity: 0.3;
+}
+
+.uc-placeholder p {
+    font-size: 0.95rem;
+    max-width: 280px;
+    line-height: 1.6;
+}
+
+.uc-course-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.uc-selected-user-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.uc-selected-user-info h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary, #f1f5f9);
+    margin: 0 0 4px 0;
+}
+
+.uc-assign-form {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.uc-assign-form h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 12px 0;
+}
+
+.uc-form-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.uc-form-row select {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text-primary, #f1f5f9);
+    font-size: 0.875rem;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.uc-form-row select option {
+    background: #1e293b;
+    color: #f1f5f9;
+}
+
+.uc-form-row select:focus {
+    border-color: #6366f1;
+}
+
+.uc-form-row .btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    white-space: nowrap;
+}
+
+.uc-hint {
+    display: block;
+    margin-top: 8px;
+    color: var(--text-secondary, #64748b);
+    font-size: 0.8rem;
+}
+
+.uc-courses-list {
+    flex: 1;
+    padding: 20px 24px;
+    overflow-y: auto;
+}
+
+.uc-courses-list h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 14px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.uc-count {
+    background: rgba(99, 102, 241, 0.2);
+    color: #818cf8;
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.uc-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 48px;
+    color: var(--text-secondary, #64748b);
+    text-align: center;
+}
+
+.uc-empty svg {
+    opacity: 0.3;
+}
+
+.uc-empty p {
+    font-size: 0.875rem;
+}
+
+.uc-loading {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-secondary, #64748b);
+    font-size: 0.875rem;
+}
+
+.uc-success {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #4ade80;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    margin-bottom: 12px;
+    margin: 0 24px 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .uc-layout {
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+    }
+
+    .uc-user-panel {
+        width: 100%;
+        min-width: unset;
+        max-height: 320px;
+    }
+
+    .uc-form-row {
+        flex-direction: column;
+    }
+
+    .uc-form-row select,
+    .uc-form-row .btn-primary {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ---- Capacity Card ---- */
+.uc-capacity-card {
+    margin-top: 12px;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1px solid transparent;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.uc-capacity-card.ok {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.25);
+}
+
+.uc-capacity-card.error {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.uc-capacity-msg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.uc-capacity-card.ok .uc-capacity-msg {
+    color: #4ade80;
+}
+
+.uc-capacity-card.error .uc-capacity-msg {
+    color: #f87171;
+}
+
+.cap-icon {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.uc-capacity-summary {
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.uc-capacity-summary strong {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.cap-room-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+}
+
+.cap-room-name {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.cap-room-caps {
+    color: #cbd5e1;
+    font-size: 0.75rem;
+}
+
+/* ---- Room Chip (in table) ---- */
+.uc-room-chip {
+    display: inline-block;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    color: #818cf8;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 5px;
+    margin: 1px 2px;
+    white-space: nowrap;
+}

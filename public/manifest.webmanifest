@@ -1,0 +1,56 @@
+{
+    "name": "SimLogicFlow",
+    "short_name": "SimLogicFlow",
+    "description": "Sistema de gestión de simuladores de vuelo, cursos, mantenimientos y programación de sesiones.",
+    "theme_color": "#6366f1",
+    "background_color": "#0f172a",
+    "display": "standalone",
+    "scope": "/",
+    "start_url": "/",
+    "orientation": "landscape-primary",
+    "lang": "es",
+    "categories": [
+        "productivity",
+        "utilities"
+    ],
+    "icons": [
+        {
+            "src": "/icons/pwa-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icons/pwa-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Programación de Cursos",
+            "short_name": "Programación",
+            "description": "Ver y gestionar programación de sesiones",
+            "url": "/?menu=procourses",
+            "icons": [
+                {
+                    "src": "/icons/pwa-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Calendario",
+            "short_name": "Calendario",
+            "description": "Ver calendario de cursos y mantenimientos",
+            "url": "/?menu=calendar",
+            "icons": [
+                {
+                    "src": "/icons/pwa-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ]
+}
